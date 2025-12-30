@@ -4,10 +4,14 @@ import { getNow } from "../../../lib/time";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const paste = await kv.get<any>(`paste:${params.id}`);
-  if (!paste) return NextResponse.json({ error: "not found" }, { status: 404 });
+  const { id } = await context.params;
+
+  const paste = await kv.get<any>(`paste:${id}`);
+  if (!paste) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
 
   const now = getNow(req);
 
@@ -19,8 +23,9 @@ export async function GET(
     return NextResponse.json({ error: "view limit" }, { status: 404 });
   }
 
+  // increment views
   paste.views += 1;
-  await kv.set(`paste:${params.id}`, paste);
+  await kv.set(`paste:${id}`, paste);
 
   return NextResponse.json({
     content: paste.content,
