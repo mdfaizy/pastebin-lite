@@ -4,9 +4,9 @@ import { getNow } from "../../../lib/time";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> } // ✅ Promise REQUIRED
 ) {
-  const { id } = params;
+  const { id } = await context.params;
   const key = `paste:${id}`;
 
   const raw = await redis.get(key);
@@ -17,13 +17,13 @@ export async function GET(
   const paste = JSON.parse(raw as string);
   const now = getNow(req);
 
-  // ⏱ TTL check
+  // ⏱ TTL
   if (paste.expires_at && now >= paste.expires_at) {
     await redis.del(key);
     return NextResponse.json({ error: "expired" }, { status: 404 });
   }
 
-  // 👀 View limit check
+  // 👀 View limit
   if (paste.max_views !== null && paste.views >= paste.max_views) {
     await redis.del(key);
     return NextResponse.json({ error: "view limit" }, { status: 404 });

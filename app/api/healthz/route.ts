@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
-import kv from "../../lib/kv";
+import redis from "../../lib/redis";
 
 export async function GET() {
   try {
-    await kv.ping();
+    // ✅ Redis connectivity check
+    await redis.ping();
+
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ ok: false }, { status: 500 });
+  } catch (error) {
+    console.error("Health check failed:", error);
+
+    return NextResponse.json(
+      { ok: false },
+      { status: 500 }
+    );
   }
 }
