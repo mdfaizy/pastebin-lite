@@ -1,68 +1,3 @@
-// import Image from "next/image";
-
-// export default function Home() {
-//   return (
-//     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-//       <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-//         <Image
-//           className="dark:invert"
-//           src="/next.svg"
-//           alt="Next.js logo"
-//           width={100}
-//           height={20}
-//           priority
-//         />
-//         <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-//           <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-//             To get started, edit the page.tsx file.
-//           </h1>
-//           <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-//             Looking for a starting point or more instructions? Head over to{" "}
-//             <a
-//               href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-//               className="font-medium text-zinc-950 dark:text-zinc-50"
-//             >
-//               Templates
-//             </a>{" "}
-//             or the{" "}
-//             <a
-//               href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-//               className="font-medium text-zinc-950 dark:text-zinc-50"
-//             >
-//               Learning
-//             </a>{" "}
-//             center.
-//           </p>
-//         </div>
-//         <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-//           <a
-//             className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-//             href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-//             target="_blank"
-//             rel="noopener noreferrer"
-//           >
-//             <Image
-//               className="dark:invert"
-//               src="/vercel.svg"
-//               alt="Vercel logomark"
-//               width={16}
-//               height={16}
-//             />
-//             Deploy Now
-//           </a>
-//           <a
-//             className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-//             href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-//             target="_blank"
-//             rel="noopener noreferrer"
-//           >
-//             Documentation
-//           </a>
-//         </div>
-//       </main>
-//     </div>
-//   );
-// }
 "use client";
 import { useState } from "react";
 
@@ -72,9 +7,13 @@ export default function Home() {
   const [views, setViews] = useState("");
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function submit() {
     setError("");
+    setUrl("");
+    setLoading(true);
+
     const res = await fetch("/api/pastes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -85,62 +24,111 @@ export default function Home() {
       }),
     });
 
-    const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      setError("Server error. Please try again.");
+      setLoading(false);
+      return;
+    }
+
     if (!res.ok) {
-      setError(data.error || "Something went wrong");
+      setError(data?.error || "Something went wrong");
+      setLoading(false);
       return;
     }
 
     setUrl(data.url);
+    setLoading(false);
   }
 
   return (
-    <div style={{ maxWidth: 700, margin: "40px auto", padding: 20 }}>
-      <h1>Pastebin Lite</h1>
-      <p>Create and share text snippets securely.</p>
-
-      <textarea
-        placeholder="Paste your text here..."
-        rows={10}
-        style={{ width: "100%", padding: 10 }}
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-      />
-
-      <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-        <input
-          type="number"
-          placeholder="TTL (seconds)"
-          value={ttl}
-          onChange={(e) => setTtl(e.target.value)}
-        />
-        <input
-          type="number"
-          placeholder="Max Views"
-          value={views}
-          onChange={(e) => setViews(e.target.value)}
-        />
-      </div>
-
-      <button
-        onClick={submit}
-        style={{
-          marginTop: 15,
-          padding: "10px 20px",
-          cursor: "pointer",
-        }}
-      >
-        Create Paste
-      </button>
-
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      {url && (
-        <div style={{ marginTop: 20 }}>
-          <p>Share this link:</p>
-          <input value={url} readOnly style={{ width: "100%" }} />
+    <main className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-200 flex items-center justify-center p-4">
+      <div className="w-full max-w-3xl rounded-2xl bg-white shadow-xl p-8">
+        {/* Header */}
+        <div className="mb-6 text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-900">
+            Pastebin Lite
+          </h1>
+          <p className="mt-2 text-zinc-600">
+            Create a paste and share it securely with optional expiry.
+          </p>
         </div>
-      )}
-    </div>
+
+        {/* Textarea */}
+        <div className="mb-4">
+          <label className="mb-1 block text-sm font-medium text-zinc-700">
+            Paste Content
+          </label>
+          <textarea
+            rows={10}
+            placeholder="Paste your text here..."
+            className="w-full rounded-lg border border-zinc-300 p-3 text-sm focus:border-black focus:outline-none text-black"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+          />
+        </div>
+
+        {/* Options */}
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-zinc-700">
+              TTL (seconds)
+            </label>
+            <input
+              type="number"
+              placeholder="e.g. 60"
+              className="w-full rounded-lg border border-zinc-300 p-2 text-sm focus:border-black focus:outline-none text-black"
+              value={ttl}
+              onChange={(e) => setTtl(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-black">
+              Max Views
+            </label>
+            <input
+              type="number"
+              placeholder="e.g. 5"
+              className="w-full rounded-lg border border-zinc-300 p-2 text-sm focus:border-black focus:outline-none text-black"
+              value={views}
+              onChange={(e) => setViews(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Button */}
+        <button
+          onClick={submit}
+          disabled={loading}
+          className="w-full rounded-xl bg-black py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60"
+        >
+          {loading ? "Creating..." : "Create Paste"}
+        </button>
+
+        {/* Error */}
+        {error && (
+          <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+            {error}
+          </p>
+        )}
+
+        {/* Result */}
+        {url && (
+          <div className="mt-6 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+            <p className="mb-2 text-sm font-medium text-zinc-700">
+              Share this link
+            </p>
+            <input
+              value={url}
+              readOnly
+              className="w-full rounded-lg border border-zinc-300 bg-white p-2 text-sm text-black"
+            />
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
