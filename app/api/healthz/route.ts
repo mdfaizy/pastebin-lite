@@ -3,7 +3,7 @@ import redis from "../../lib/redis";
 
 export async function GET() {
   try {
-    // ✅ Redis connectivity check
+    // ✅ Check Redis connectivity
     await redis.ping();
 
     return NextResponse.json({ ok: true });
