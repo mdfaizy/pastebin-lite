@@ -1,18 +1,14 @@
 import { NextResponse } from "next/server";
-import redis from "../../lib/redis";
+import { getRedis } from "../../lib/redis";
 
 export async function GET() {
   try {
-    // ✅ Check Redis connectivity
+    const redis = await getRedis();
     await redis.ping();
 
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("Health check failed:", error);
-
-    return NextResponse.json(
-      { ok: false },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false }, { status: 500 });
   }
 }
